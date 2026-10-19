@@ -1,43 +1,41 @@
 module.exports = async (req, res) => {
   res.setHeader('Cache-Control','no-store');
-  if (req.query.secret !== process.env.CRON_SECRET) return res.status(401).json({error:'secret malo'});
-  const inicio = Date.now();
+  if (req.query.secret !== process.env.CRON_SECRET) return res.status(401).json({error:'mal secret'});
   try {
     const USER_TOKEN = (process.env.USER_TOKEN||'').trim();
     const accRes = await fetch('https://graph.facebook.com/v20.0/me/accounts?fields=id,name,access_token&limit=20&access_token='+USER_TOKEN);
     const accData = await accRes.json();
-    if (accData.error) return res.json({fb_error: accData.error});
-
-    let reporte = [];
-    let borrados = [];
-
-    // si me pasas ?page_id=123 solo revisa esa pagina
-    const soloEsta = req.query.page_id;
+    if (accData.error) return res.json(accData);
+    
     let paginas = accData.data || [];
-    if (soloEsta) paginas = paginas.filter(p => p.id == soloEsta);
+    if (paginas.length === 0) return res.json({error:'no hay paginas, revisa USER_TOKEN'});
 
-    for (const p of paginas) {
-      // si ya van 8 segundos, paramos para no dar 504
-      if (Date.now() - inicio > 8000) {
-        reporte.push({aviso: 'se corto por tiempo, faltaron paginas'});
-        break;
-      }
-      const fr = await fetch(`https://graph.facebook.com/v20.0/${p.id}/feed?fields=id,comments.order(reverse_chronological).limit(5){id,message,from,created_time}&limit=2&access_token=${p.access_token}`);
-      const fd = await fr.json();
-      const totalCom = (fd.data||[]).reduce((a,b)=>a+(b.comments?.data?.length||0),0);
-      reporte.push({pagina: p.name, id: p.id, posts: fd.data?.length||0, comentarios_vistos: totalCom});
+    // Si me mandas ?page_id= lo uso, si no roto automaticamente
+    let target;
+    if (req.query.page_id) {
+      target = paginas.find(p => p.id == req.query.page_id);
+    } else {
+      // rota por minuto: minuto 0= pag 0, minuto 1= pag 1, etc
+      const idx = new Date().getMinutes() % paginas.length;
+      target = paginas[idx];
+    }
 
-      for (const post of fd.data||[]) {
-        for (const c of post.comments?.data||[]) {
-          if (c.from?.id === p.id) continue;
-          const haceMin = (Date.now() - new Date(c.created_time)) / 60000;
-          if (haceMin > 10) continue;
-          const dr = await fetch(`https://graph.facebook.com/v20.0/${c.id}?access_token=${p.access_token}`, {method:'DELETE'});
-          const dj = await dr.json();
-          borrados.push({pagina: p.name, comentario: c.message, fb: dj});
-        }
+    if (!target) return res.json({error:'page_id no encontrado', paginas: paginas.map(p=>({id:p.id, name:p.name}))});
+
+    const fr = await fetch(`https://graph.facebook.com/v20.0/${target.id}/feed?fields=id,comments.order(reverse_chronological).limit(10){id,message,from,created_time}&limit=3&access_token=${target.access_token}`);
+    const fd = await fr.json();
+
+    let borrados = [];
+    for (const post of fd.data||[]) {
+      for (const c of post.comments?.data||[]) {
+        if (c.from?.id === target.id) continue;
+        const haceMin = (Date.now() - new Date(c.created_time)) / 60000;
+        if (haceMin > 15) continue; // 15 min de ventana
+        const dr = await fetch(`https://graph.facebook.com/v20.0/${c.id}?access_token=${target.access_token}`, {method:'DELETE'});
+        const dj = await dr.json();
+        borrados.push({pagina: target.name, comentario: c.message, resp: dj});
       }
     }
-    return res.json({ok:true, v:'v11-4-paginas', paginas_totales: accData.data?.length, reporte, borrados, segundos: (Date.now()-inicio)/1000});
+    return res.json({ok:true, v:'v12-rotativo', revisando: target.name, id: target.id, paginas_totales: paginas.length, borrados});
   } catch(e){ return res.status(500).json({error:e.message}); }
 };

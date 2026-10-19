@@ -10,34 +10,32 @@ module.exports = async (req, res) => {
     let debug = [];
     for (const page of (accData.data||[])) {
       const token = page.access_token;
-      const feedRes = await fetch(`https://graph.facebook.com/v20.0/${page.id}/feed?fields=id,comments.limit(10){id,message,from,comment_count}&limit=2&access_token=${token}`);
+      const feedRes = await fetch(`https://graph.facebook.com/v20.0/${page.id}/feed?fields=id,comments.limit(5){id,message,from,comment_count}&limit=1&access_token=${token}`);
       const feedData = await feedRes.json();
       for (const post of (feedData.data||[])) {
         for (const c of (post.comments?.data||[])) {
           if (!c.message) continue;
-          if (c.comment_count > 0) continue; // ya respondido, no volver a responder
+          if (c.comment_count > 0) continue;
           const low = c.message.toLowerCase();
-          if (low.includes('precio') || low.includes('cuanto') || low.includes('costo') || low.includes('info')) {
-            const text = `Hola ${c.from?.name||''}! Te enviamos la info por mensaje privado, revisa tus solicitudes 😊`;
+          if (low.includes('precio') || low.includes('cuanto')) {
+            const text = `Hola! Ya te escribimos al privado con la info 😊`;
             const r = await fetch(`https://graph.facebook.com/v20.0/${c.id}/comments`, {
               method: 'POST',
               headers: {'Content-Type':'application/x-www-form-urlencoded'},
               body: `message=${encodeURIComponent(text)}&access_token=${token}`
             });
             const j = await r.json();
-            // si lo creó, aseguramos que no quede oculto
+            let link = "";
             if (j.id) {
-              await fetch(`https://graph.facebook.com/v20.0/${j.id}`, {
-                method: 'POST',
-                headers: {'Content-Type':'application/x-www-form-urlencoded'},
-                body: `is_hidden=false&access_token=${token}`
-              });
+              const infoRes = await fetch(`https://graph.facebook.com/v20.0/${j.id}?fields=permalink_url,is_hidden&access_token=${token}`);
+              const info = await infoRes.json();
+              link = info.permalink_url || "";
             }
-            debug.push({ coment: c.message, fb_respuesta: j });
+            debug.push({ comentario_original: c.message, respuesta_id: j.id, link_directo: link });
           }
         }
       }
     }
-    return res.json({ ok: true, version: "v3-unhide", debug });
+    return res.json({ ok: true, version: "v4-link", debug });
   } catch (e) { return res.json({ error: e.message }); }
 };

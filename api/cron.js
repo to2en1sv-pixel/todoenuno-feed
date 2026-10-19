@@ -1,11 +1,14 @@
 export default async function handler(req, res) {
-  if (req.query.secret !== process.env.CRON_SECRET) {
-    return res.status(401).json({ error: 'no autorizado' });
+  const MY_SECRET = "123456"; // pon lo que quieras aquí directo
+  
+  if (req.query.secret !== MY_SECRET) {
+    return res.status(401).json({ error: 'no autorizado, manda ?secret=123456' });
   }
 
   const PAGES = [
     { id: '112480793428483', token: process.env.PAGE_TOKEN_SALVADORENO, name: 'Salvadoreño' },
   ];
+  // ... el resto igual
 
   const BAD_WORDS = ['estafa', 'estafador', 'falso', 'robo', 'ladron', 'mentira'];
   const PRICE_WORDS = ['precio', 'cuanto', 'cuánto', 'info', 'informacion'];

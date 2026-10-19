@@ -3,7 +3,7 @@ module.exports = async (req, res) => {
     if (req.query.secret !== process.env.CRON_SECRET) {
       return res.status(401).json({ error: 'no autorizado' });
     }
-    const USER_TOKEN = process.env.USER_TOKEN;
+  const USER_TOKEN = (process.env.USER_TOKEN || "").trim().replace(/"/g,'').replace(/\s+/g,'');
     if (!USER_TOKEN) {
       return res.json({ error: "Falta USER_TOKEN" });
     }

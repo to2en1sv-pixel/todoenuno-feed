@@ -3,5 +3,11 @@
     "api/feed.js": {
       "maxDuration": 10
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/cron?secret=123456",
+      "schedule": "*/2 * * * *"
+    }
+  ]
 }

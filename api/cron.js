@@ -45,7 +45,7 @@ export default async function handler(req, res) {
         if (comment.is_hidden) continue;
         const msg = (comment.message || '').toLowerCase();
         // 30 min para que puedas probar, luego lo bajas a 10
-        const isRecent = (Date.now() - new Date(comment.created_time).getTime()) < 30 * 60 * 1000;
+        const isRecent = (Date.now() - new Date(comment.created_time).getTime()) < 10 * 60 * 1000;
         if (!isRecent) continue;
 
         // 1. Ocultar insultos

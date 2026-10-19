@@ -1,47 +1,20 @@
 export default async function handler(req, res) {
-  const MY_SECRET = "123456"; // pon lo que quieras aquí directo
-  
+  const MY_SECRET = "123456";
   if (req.query.secret !== MY_SECRET) {
-    return res.status(401).json({ error: 'no autorizado, manda ?secret=123456' });
+    return res.status(401).json({ error: 'no autorizado' });
   }
-
-  const PAGES = [
-    { id: '112480793428483', token: process.env.PAGE_TOKEN_SALVADORENO, name: 'Salvadoreño' },
-  ];
-  // ... el resto igual
-
-  const BAD_WORDS = ['estafa', 'estafador', 'falso', 'robo', 'ladron', 'mentira'];
-  const PRICE_WORDS = ['precio', 'cuanto', 'cuánto', 'info', 'informacion'];
-
-  let results = [];
-
-  for (const page of PAGES) {
-    if (!page.token) continue;
-    const feedUrl = `https://graph.facebook.com/v20.0/${page.id}/feed?fields=comments.limit(25){id,message,from,is_hidden,created_time}&limit=5&access_token=${page.token}`;
-    const feedRes = await fetch(feedUrl);
-    const feedData = await feedRes.json();
-    if (!feedData.data) continue;
-
-    for (const post of feedData.data) {
-      if (!post.comments?.data) continue;
-      for (const comment of post.comments.data) {
-        if (comment.is_hidden) continue;
-        const msg = (comment.message || '').toLowerCase();
-        const isRecent = (Date.now() - new Date(comment.created_time).getTime()) < 24 * 60 * 60 * 1000;
-        if (!isRecent) continue;
-
-        if (BAD_WORDS.some(w => msg.includes(w))) {
-          await fetch(`https://graph.facebook.com/v20.0/${comment.id}?is_hidden=true&access_token=${page.token}`, { method: 'POST' });
-          results.push(`[${page.name}] OCULTADO: ${comment.message}`);
-          continue;
-        }
-        if (PRICE_WORDS.some(w => msg.includes(w))) {
-          const reply = `¡Hola! Te escribimos al inbox con la info 😊`;
-          await fetch(`https://graph.facebook.com/v20.0/${comment.id}/comments?message=${encodeURIComponent(reply)}&access_token=${page.token}`, { method: 'POST' });
-          results.push(`[${page.name}] RESPONDIDO: ${comment.message}`);
-        }
-      }
-    }
-  }
-  res.status(200).json({ ok: true, processed: results });
+  const pageId = '112480793428483';
+  const token = process.env.PAGE_TOKEN_SALVADORENO;
+  if (!token) return res.json({ error: "NO HAY TOKEN en Vercel", envs: Object.keys(process.env) });
+  // Probamos 2 endpoints
+  const url1 = `https://graph.facebook.com/v20.0/${pageId}/feed?fields=id,message,comments.limit(10){id,message,created_time}&limit=3&access_token=${token}`;
+  const r1 = await fetch(url1);
+  const data1 = await r1.json();
+  return res.status(200).json({
+    ok: true,
+    debug_feed: data1,
+    token_exists: !!token,
+    token_first_20: token ? token.substring(0,20) : null
+  });
 }
+  // ... el resto igua

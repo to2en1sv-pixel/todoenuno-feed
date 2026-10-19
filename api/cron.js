@@ -27,7 +27,7 @@ export default async function handler(req, res) {
       for (const comment of post.comments.data) {
         if (comment.is_hidden) continue;
         const msg = (comment.message || '').toLowerCase();
-        const isRecent = (Date.now() - new Date(comment.created_time).getTime()) < 10 * 60 * 1000;
+        const isRecent = (Date.now() - new Date(comment.created_time).getTime()) < 24 * 60 * 60 * 1000;
         if (!isRecent) continue;
 
         if (BAD_WORDS.some(w => msg.includes(w))) {

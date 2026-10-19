@@ -1,13 +1,6 @@
 {
   "functions": {
     "api/feed.js": { "maxDuration": 10 },
-    "api/cron.js": { "maxDuration": 10 },
-    "api/cron2.js": { "maxDuration": 10 }
-  },
-  "crons": [
-    {
-      "path": "/api/cron?secret=123456",
-      "schedule": "*/2 * * * *"
-    }
-  ]
+    "api/cron.js": { "maxDuration": 10 }
+  }
 }

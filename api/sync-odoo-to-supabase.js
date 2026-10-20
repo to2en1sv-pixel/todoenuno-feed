@@ -37,18 +37,28 @@ export default async function handler(req, res) {
       const m=v.display_name.match(/Color:\s*([^,\)]+).*Talla:\s*([^,\)]+)/i);
       if(m){ color=m[1].trim(); talla=m[2].trim(); }
 
+      const skuFinal = v.default_code || v.display_name.toLowerCase().replace(/\s+/g,'-');
       const estado = (!v.active || !tmpl.active || !tmpl.website_published) ? 'NO_DISPONIBLE' : (v.qty_available>0 ? 'DISPONIBLE' : 'TEST');
 
       const {error:e1} = await supabase.from('productos').upsert({ template_id: tmpl.id, nombre_base: tmpl.name, is_published: tmpl.website_published, active: tmpl.active }, {onConflict:'template_id'});
       if(e1) errors.push({fase:'producto', id:tmpl.id, error:e1});
 
       const {error:e2} = await supabase.from('productos_variantes').upsert({
-        variante_id:v.id, template_id:tmpl.id, sku:v.default_code||v.display_name.toLowerCase().replace(/\s+/g,'-'), nombre_completo:v.display_name,
+        variante_id:v.id, template_id:tmpl.id, sku:skuFinal, nombre_completo:v.display_name,
         color, talla, stock:v.qty_available, precio:v.list_price, estado, es_test: estado==='TEST', updated_at:new Date().toISOString()
       }, {onConflict:'variante_id'});
       if(e2) errors.push({fase:'variante', id:v.id, error:e2}); else ok++;
+
+      // ESTE BLOQUE FALTABA - ES EL QUE USA BUILDERBOT
+      const {error:e3} = await supabase.from('inventory_cache').upsert({
+        sku: skuFinal,
+        qty: v.qty_available,
+        state: estado, // DISPONIBLE, TEST o NO_DISPONIBLE
+        updated_at: new Date().toISOString()
+      }, {onConflict:'sku'});
+      if(e3) errors.push({fase:'inventory_cache', sku:skuFinal, error:e3});
     }
-    return res.status(200).json({ ok:true, synced:ok, total_leido:variantes.length, supabase_errors:errors.slice(0,5), supabase_url:process.env.SUPABASE_URL });
+    return res.status(200).json({ ok:true, synced:ok, total_leido:variantes.length, supabase_errors:errors.slice(0,10) });
 
   } catch(e){ return res.status(500).json({ error:e.message, stack:e.stack }); }
 }

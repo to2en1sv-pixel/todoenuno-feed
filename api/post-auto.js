@@ -134,30 +134,39 @@ export default async function handler(req, res) {
     // Solo una ejecución podrá cambiar pending a posting.
     phase = 'claim'
 
-    const { data: claimed, error: claimError } =
-      await supabase
-        .from('post_queue')
-        .update({ status: 'posting' })
-        .eq('id', item.id)
-        .eq('status', 'pending')
-        .select('id')
 
-    if (claimError) {
-      console.error('Error reservando producto:', claimError)
+const { data: claimed, error: claimError } = await supabase
+  .from('post_queue')
+  .update({ status: 'posting' })
+  .eq('id', item.id)
+  .eq('status', 'pending')
+  .select('id, status')
 
-      return res.status(500).json({
-        error: 'No se pudo reservar el producto',
-        id: item.id
-      })
-    }
+if (claimError) {
+  console.error('Error al reservar producto:', {
+    code: claimError.code,
+    message: claimError.message,
+    details: claimError.details,
+    hint: claimError.hint
+  })
 
-    if (!claimed?.length) {
-      return res.status(409).json({
-        ok: false,
-        msg: 'El producto ya fue reservado por otra ejecución',
-        id: item.id
-      })
-    }
+  return res.status(500).json({
+    error: 'Error de Supabase al reservar el producto',
+    code: claimError.code,
+    message: claimError.message,
+    details: claimError.details,
+    hint: claimError.hint,
+    id: item.id
+  })
+}
+
+if (!claimed || claimed.length === 0) {
+  return res.status(409).json({
+    error: 'El producto ya no está pendiente o no se pudo actualizar',
+    id: item.id
+  })
+}
+    
 
     // 7. Preparar publicación
     const title = item.nombre || 'Producto Todo En Uno'

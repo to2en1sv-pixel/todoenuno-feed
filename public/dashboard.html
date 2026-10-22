@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TODOENUNO OS V2 - Real Dashboard</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#080808;color:#e5e5e5;font-family:Inter,-apple-system,BlinkMacSystemFont,Segoe UI,sans-serif;min-height:100vh}
+.mono{font-family:JetBrains Mono,Menlo,monospace}
+.container{max-width:1320px;margin:0 auto;padding:24px}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+.header h1{font-size:22px;font-weight:800;letter-spacing:-0.5px}
+.header h1 span{color:#71717a;font-weight:400}
+.header p{color:#71717a;font-size:12px;margin-top:2px}
+.badge{padding:6px 12px;border-radius:999px;font-size:11px;border:1px solid #27272a;background:#18181b}
+.badge.ok{background:#052e16;border-color:#14532d;color:#4ade80}
+.badge.err{background:#450a0a;border-color:#7f1d1d;color:#f87171}
+.badge.warn{background:#422006;border-color:#78350f;color:#fbbf24}
+.config{display:grid;grid-template-columns:1fr 1fr 1fr 1.2fr;gap:12px;background:#111113;border:1px solid #27272a;border-radius:14px;padding:16px;margin-bottom:20px}
+.config label{font-size:10px;color:#a1a1aa;text-transform:uppercase;letter-spacing:0.8px;font-weight:600}
+.config input{width:100%;margin-top:6px;background:#000;border:1px solid #27272a;border-radius:8px;padding:10px 12px;color:#fff;font-size:12px;font-family:JetBrains Mono}
+.config input:focus{outline:none;border-color:#3f3f46}
+.btn{width:100%;margin-top:6px;background:#fff;color:#000;border:none;border-radius:8px;padding:11px;font-weight:700;font-size:13px;cursor:pointer}
+.btn:hover{background:#e4e4e7}
+.btn:disabled{opacity:0.5}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px}
+.kpi{background:linear-gradient(180deg,#141414 0%,#111113 100%);border:1px solid #27272a;border-radius:14px;padding:16px}
+.kpi .label{font-size:10px;color:#71717a;text-transform:uppercase;letter-spacing:0.8px;font-weight:700}
+.kpi .value{font-size:26px;font-weight:800;margin-top:6px;letter-spacing:-1px}
+.kpi .sub{font-size:11px;color:#71717a;margin-top:6px;font-family:JetBrains Mono}
+.kpi .row{display:flex;gap:16px;margin-top:8px}
+.kpi .row .big{font-size:22px;font-weight:800}
+.green{color:#4ade80}.yellow{color:#facc15}.red{color:#f87171}.blue{color:#60a5fa}
+.main{display:grid;grid-template-columns:2fr 1fr;gap:14px}
+.card{background:#111113;border:1px solid #27272a;border-radius:14px;padding:16px}
+.card h3{font-size:13px;font-weight:700;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
+.table-wrap{overflow:auto;max-height:520px;border-radius:8px;border:1px solid #1f1f23}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead{position:sticky;top:0;background:#111113;z-index:2}
+th{text-align:left;padding:10px 8px;color:#71717a;font-size:10px;text-transform:uppercase;letter-spacing:0.6px;border-bottom:1px solid #27272a}
+td{padding:9px 8px;border-bottom:1px solid #1a1a1e;vertical-align:top}
+tr:hover{background:#151517}
+.status{padding:3px 8px;border-radius:999px;font-size:10px;font-weight:700;text-transform:uppercase}
+.status.posted{background:#052e16;color:#4ade80;border:1px solid #14532d}
+.status.pending{background:#422006;color:#fbbf24;border:1px solid #78350f}
+.status.failed{background:#450a0a;color:#f87171;border:1px solid #7f1d1d}
+.filters{display:flex;gap:8px}
+.filters input, .filters select{background:#000;border:1px solid #27272a;border-radius:6px;padding:6px 8px;color:#fff;font-size:11px}
+.fb-item{background:#0a0a0a;border:1px solid #1f1f23;border-radius:8px;padding:10px;margin-bottom:8px}
+.fb-item .msg{color:#d4d4d8;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fb-item .meta{color:#52525b;font-size:10px;margin-top:4px;font-family:JetBrains Mono}
+.endpoints .ep{background:#000;border:1px solid #27272a;border-radius:8px;padding:8px 10px;display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;font-family:JetBrains Mono;font-size:11px}
+.copy{color:#71717a;cursor:pointer;font-size:10px;text-transform:uppercase}
+.copy:hover{color:#fff}
+.code{background:#000;border:1px solid #1f1f23;border-radius:8px;padding:10px;font-size:10px;color:#71717a;font-family:JetBrains Mono;overflow:auto;white-space:pre}
+.alert{background:linear-gradient(90deg,rgba(34,197,94,0.1),rgba(34,197,94,0.05));border:1px solid #14532d;border-radius:10px;padding:12px;font-size:11px;color:#a1a1aa;margin-top:16px}
+.alert b{color:#4ade80}
+@media(max-width:900px){.config{grid-template-columns:1fr 1fr}.kpis{grid-template-columns:1fr 1fr}.main{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div><h1>TODOENUNO OS <span>V2 REAL</span></h1><p>Supabase trgywmh... + Page 10167... + Feed Meta · 22/10/2026 · Nivel 2.5 → 4.5</p></div>
+    <div style="display:flex;gap:8px;align-items:center">
+      <div id="status" class="badge">Sin conectar</div>
+      <div style="font-size:10px;color:#52525b" class="mono">Fase 1 cerrada 15:11</div>
+    </div>
+  </div>
+  <div class="config">
+    <div><label>Supabase URL</label><input id="sbUrl" value="https://trgywmhxmkbjfcdvxpnz.supabase.co"></div>
+    <div><label>Supabase Anon Key *</label><input id="sbKey" type="password" placeholder="eyJhbG... pega aquí"></div>
+    <div><label>Page Token Eterno (EAA...)</label><input id="fbToken" type="password" placeholder="EAA..."></div>
+    <div><label>Page ID</label><input id="pageId" value="101676216111131"><button id="connectBtn" class="btn">CONECTAR Y CARGAR DATOS REALES →</button></div>
+    <div style="grid-column:1/-1;color:#52525b;font-size:10px">* Tu Anon Key se guarda solo en tu navegador (localStorage). Nunca sale de aquí. Para producción crea <span class="mono" style="color:#71717a">/api/dashboard-stats</span> con SERVICE_ROLE.</div>
+  </div>
+  <div class="kpis">
+    <div class="kpi"><div class="label">Total post_queue (100 últimos)</div><div id="kTotal" class="value">--</div><div id="kBreak" class="sub">Esperando conexión</div></div>
+    <div class="kpi"><div class="label">Pending / Posted / Failed</div><div class="row"><div><div id="kPending" class="big yellow">--</div><div class="sub">pending</div></div><div><div id="kPosted" class="big green">--</div><div class="sub">posted</div></div><div><div id="kFailed" class="big red">--</div><div class="sub">failed</div></div></div></div>
+    <div class="kpi"><div class="label">Último posteado real</div><div id="kLast" class="value" style="font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">--</div><div id="kLastTime" class="sub">--</div><div style="margin-top:8px"><a id="kLastLink" target="_blank" style="font-size:11px;color:#60a5fa;display:none;text-decoration:none">Ver en Facebook →</a></div></div>
+    <div class="kpi"><div class="label">Token App 332926110593782</div><div id="kToken" class="value" style="font-size:16px">--</div><div class="sub">Business · pages_read · manage<br>Expira: Nunca (0)</div></div>
+  </div>
+  <div class="main">
+    <div class="card">
+      <h3>post_queue REAL · Supabase <span style="display:flex;gap:6px" class="filters"><input id="filterInput" placeholder="Buscar chancla, toalla..."><select id="statusFilter"><option value="all">Todos</option><option value="pending">pending</option><option value="posted">posted</option><option value="failed">failed</option></select></span></h3>
+      <div class="table-wrap"><table><thead><tr><th>template_id</th><th>nombre</th><th>status</th><th>posted_at</th><th>fb_post</th></tr></thead><tbody id="tableBody"><tr><td colspan="5" style="padding:32px;text-align:center;color:#52525b">Pega tu Anon Key arriba y conecta para ver tus 100 últimos registros reales.<br><span style="font-size:10px">Incluye el trigger que validamos hoy con error foreign key.</span></td></tr></tbody></table></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="card"><h3>Page Feed Real <span id="fbCount" style="font-size:10px;color:#52525b" class="mono">0 posts</span></h3><div id="fbList"><div style="color:#52525b;font-size:11px;padding:12px;text-align:center">Conecta token para ver últimos posts de tu Page<br>Valida que token eterno sigue vivo</div></div></div>
+      <div class="card endpoints"><h3>Endpoints & Crons</h3>
+        <div class="ep"><span>sync-odoo-to-supabase?secret=</span><span class="copy" onclick="copy('https://todoenuno-feed.vercel.app/api/sync-odoo-to-supabase?secret=')">copiar</span></div>
+        <div class="ep"><span>post-auto?secret=123456</span><span class="copy" onclick="copy('https://todoenuno-feed.vercel.app/api/post-auto?secret=123456')">copiar</span></div>
+        <div class="ep"><span>feed/meta (Catalogo)</span><span class="copy" onclick="copy('https://todoenuno-feed.vercel.app/api/feed/meta')">copiar</span></div>
+        <div style="background:#0a0a0a;border:1px dashed #27272a;border-radius:8px;padding:8px;font-size:10px;color:#71717a">Crons: <span class="mono" style="color:#e5e5e5">11:30 15:30 19:45 SV</span> · Min 3h · Nunca 23:00-07:00</div>
+      </div>
+      <div class="card"><h3>V3 Preview · Unichat + Ads</h3><div style="font-size:11px;color:#71717a;line-height:1.6">Con este V2 validas que post_queue funciona.<br><br><b style="color:#e5e5e5">V3 que sigue:</b><br>• /api/unichat-feed → chats que vinieron de FB<br>• /api/meta-ads → ROAS, CTR, $ gastado<br>• /api/odoo-sales → ventas reales vs posts<br>• Embudo: Post → Comentario → Chat → Venta</div></div>
+    </div>
+  </div>
+  <div class="alert"><b>✓ Fase 1 cerrada 22/10 15:11:</b> Trigger <span class="mono">trigger_nuevo_producto</span> validado. Viste el error <span class="mono">post_queue_template_id_fkey</span> porque borraste padre antes que hijo. Orden correcto: DELETE post_queue → DELETE productos → SELECT COUNT = 0. Token eterno App 332926110593782 Business nunca expira. Giro 1-30 automático.</div>
+</div>
+<script>
+const $ = id => document.getElementById(id);
+let allData=[];
+function copy(t){navigator.clipboard.writeText(t); alert('Copiado: '+t.slice(0,40)+'...')}
+function save(){localStorage.setItem('todo_sbUrl',$('sbUrl').value);localStorage.setItem('todo_sbKey',$('sbKey').value);localStorage.setItem('todo_fbToken',$('fbToken').value);localStorage.setItem('todo_pageId',$('pageId').value);}
+function load(){if(localStorage.getItem('todo_sbUrl'))$('sbUrl').value=localStorage.getItem('todo_sbUrl');if(localStorage.getItem('todo_sbKey'))$('sbKey').value=localStorage.getItem('todo_sbKey');if(localStorage.getItem('todo_fbToken'))$('fbToken').value=localStorage.getItem('todo_fbToken');if(localStorage.getItem('todo_pageId'))$('pageId').value=localStorage.getItem('todo_pageId');}
+load();
+$('connectBtn').onclick=async()=>{
+ save();
+ const sbUrl=$('sbUrl').value.trim(), sbKey=$('sbKey').value.trim(), fbToken=$('fbToken').value.trim(), pageId=$('pageId').value.trim();
+ if(!sbKey){alert('Pega tu Supabase Anon Key - la encuentras en Supabase > Settings > API > anon public');return;}
+ $('status').textContent='Cargando Supabase...'; $('status').className='badge warn'; $('connectBtn').disabled=true;
+ try{
+   const res=await fetch(`${sbUrl}/rest/v1/post_queue?select=*&order=created_at.desc&limit=100`,{headers:{apikey:sbKey,Authorization:`Bearer ${sbKey}`}});
+   if(!res.ok) throw new Error('Supabase '+res.status+' - verifica Anon Key');
+   const data=await res.json(); allData=data;
+   const total=data.length, pending=data.filter(d=>d.status==='pending').length, posted=data.filter(d=>d.status==='posted').length, failed=data.filter(d=>d.status==='failed').length;
+   $('kTotal').textContent=total; $('kBreak').textContent=`100 últimos · ${new Date().toLocaleTimeString()}`; $('kPending').textContent=pending; $('kPosted').textContent=posted; $('kFailed').textContent=failed;
+   const last=data.find(d=>d.fb_post_id); if(last){$('kLast').textContent=(last.nombre||'').slice(0,28)||('Template '+last.template_id); $('kLastTime').textContent=new Date(last.posted_at||last.created_at).toLocaleString(); const link=`https://www.facebook.com/${last.fb_post_id}`; $('kLastLink').href=link; $('kLastLink').style.display='inline';}
+   renderTable(data);
+   $('status').textContent='Supabase OK · '+total+' rows'; $('status').className='badge ok';
+   if(fbToken && pageId){
+     $('fbList').innerHTML='<div style="color:#52525b;font-size:11px;padding:8px">Cargando Page feed...</div>';
+     try{
+       const fbRes=await fetch(`https://graph.facebook.com/v19.0/${pageId}/posts?fields=id,message,created_time,permalink_url&limit=10&access_token=${fbToken}`);
+       const fbData=await fbRes.json(); if(fbData.error) throw new Error(fbData.error.message);
+       $('fbCount').textContent=(fbData.data||[]).length+' posts'; $('kToken').textContent='ETERNO OK'; $('kToken').className='value green';
+       const list=$('fbList'); list.innerHTML=''; (fbData.data||[]).forEach(p=>{const d=document.createElement('div'); d.className='fb-item'; d.innerHTML=`<div class='msg'>${(p.message||'Sin texto').substring(0,90)}</div><div class='meta'>${new Date(p.created_time).toLocaleString()} · <a href='${p.permalink_url||`https://facebook.com/${p.id}`}' target='_blank' style='color:#60a5fa'>ver →</a></div>`; list.appendChild(d);});
+     }catch(e){$('fbList').innerHTML=`<div style='color:#f87171;font-size:11px'>FB Error: ${e.message}</div>`; $('kToken').textContent='Error token'; $('kToken').className='value red';}
+   } else {$('kToken').textContent='Sin token';}
+ }catch(e){$('status').textContent='Error: '+e.message; $('status').className='badge err'; console.error(e);}
+ $('connectBtn').disabled=false;
+};
+function renderTable(data){
+ const tbody=$('tableBody'); const q=$('filterInput').value.toLowerCase(); const sf=$('statusFilter').value;
+ let f=data.filter(d=>(sf==='all'||d.status===sf)&&((d.nombre||'').toLowerCase().includes(q)||String(d.template_id).includes(q)));
+ tbody.innerHTML=f.map(d=>`<tr><td class='mono' style='color:#a1a1aa'>${d.template_id}</td><td style='max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>${d.nombre||''}</td><td><span class='status ${d.status}'>${d.status}</span></td><td class='mono' style='color:#71717a;font-size:11px'>${d.posted_at?new Date(d.posted_at).toLocaleString():'-'}<\/td><td class='mono' style='font-size:10px'>${d.fb_post_id?`<a target='_blank' href='https://www.facebook.com/${d.fb_post_id}' style='color:#60a5fa;text-decoration:none'>${String(d.fb_post_id).slice(-10)} →<\/a>`:'-'}<\/td><\/tr>`).join('')||`<tr><td colspan=5 style='padding:20px;text-align:center;color:#52525b'>Sin resultados<\/td><\/tr>`;
+}
+$('filterInput').oninput=()=>renderTable(allData); $('statusFilter').onchange=()=>renderTable(allData);
+</script>
+</body>
+</html>

@@ -75,10 +75,9 @@ async function handleFeedChange(value, page) {
 
   if (esSpam) {
     console.log(`[feed] 🛑 SPAM DETECTADO de ${nombreCliente}: "${message}". Ocultando...`);
-    // Limpiamos el ID para ocultarlo
     const cleanCommentId = commentId.split('_').pop();
     await graphPost(cleanCommentId, { is_hidden: true }, page.access_token);
-    return; // Terminamos aquí, no enviamos DM ni nada más
+    return; 
   }
 
   // ==========================================
@@ -89,7 +88,7 @@ async function handleFeedChange(value, page) {
 
   if (!tieneIntencion) {
     console.log(`[feed] 💬 Comentario ignorado (sin intención de compra): "${message}"`);
-    return; // Si no es spam ni quiere comprar, lo dejamos visible tranquilamente
+    return; 
   }
 
   // ==========================================
@@ -112,14 +111,21 @@ async function handleFeedChange(value, page) {
 
   // B. Mensajes Personalizados
   const mensajeDM = `¡Hola ${nombreCliente}! 👋 Gracias por tu interés.\n\n🛍️ Puedes ver nuestro catálogo completo aquí: https://www.to2en1.app/shop\n\n💬 Si prefieres atención personalizada, escríbenos directo a nuestro WhatsApp: https://wa.me/50369906524\n\n¡Quedamos atentos!`;
-  
   const mensajePublico = `¡Gracias ${nombreCliente}! Te enviamos toda la información por privado 📩. Revisa tus mensajes.`;
 
-  // 🔥 EL FIX: Extraer solo el ID numérico del comentario (eliminar el prefijo del post)
   const cleanCommentId = commentId.split('_').pop();
 
-  // C. Enviar DM privado (usando el ID limpio)
-  const dmRes = await graphPost(`${cleanCommentId}/private_replies`, { message: mensajeDM }, page.access_token);
+  // 🔥 EL FIX APLICADO AQUÍ: Usar el endpoint oficial de mensajes con recipient.comment_id
+  const dmRes = await graphPost(`${page.page_id}/messages`, {
+    recipient: {
+      comment_id: commentId 
+    },
+    message: {
+      text: mensajeDM
+    }
+  }, page.access_token);
+
+  // C. Guardar el DM en Supabase si se envió con éxito
   if (dmRes?.message_id) {
     const messageId = dmRes.message_id ? dmRes.message_id : `fallback_${crypto.randomUUID()}`;
     await supabase.from('fb_messages').upsert({
@@ -198,7 +204,6 @@ export default async function handler(req, res) {
   const signature = req.headers['x-hub-signature-256'];
 
   // ⚠️ ATENCIÓN: FIRMA TEMPORALMENTE DESACTIVADA PARA PRUEBAS
-  // Cuando todo esté listo para producción, cambia "if (false &&..." por "if ("
   if (false && !verifySignature(rawBody, signature)) {
     console.warn('[webhook] Firma inválida');
     return res.status(401).json({ error: 'Invalid signature' });

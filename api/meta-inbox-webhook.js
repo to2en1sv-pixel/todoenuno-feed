@@ -75,8 +75,9 @@ async function handleFeedChange(value, page) {
 
   if (esSpam) {
     console.log(`[feed] 🛑 SPAM DETECTADO de ${nombreCliente}: "${message}". Ocultando...`);
-    // Ocultamos el comentario para que nadie más lo vea
-    await graphPost(commentId, { is_hidden: true }, page.access_token);
+    // Limpiamos el ID para ocultarlo
+    const cleanCommentId = commentId.split('_').pop();
+    await graphPost(cleanCommentId, { is_hidden: true }, page.access_token);
     return; // Terminamos aquí, no enviamos DM ni nada más
   }
 
@@ -114,8 +115,11 @@ async function handleFeedChange(value, page) {
   
   const mensajePublico = `¡Gracias ${nombreCliente}! Te enviamos toda la información por privado 📩. Revisa tus mensajes.`;
 
-  // C. Enviar DM privado
-  const dmRes = await graphPost(`${commentId}/private_replies`, { message: mensajeDM }, page.access_token);
+  // 🔥 EL FIX: Extraer solo el ID numérico del comentario (eliminar el prefijo del post)
+  const cleanCommentId = commentId.split('_').pop();
+
+  // C. Enviar DM privado (usando el ID limpio)
+  const dmRes = await graphPost(`${cleanCommentId}/private_replies`, { message: mensajeDM }, page.access_token);
   if (dmRes?.message_id) {
     const messageId = dmRes.message_id ? dmRes.message_id : `fallback_${crypto.randomUUID()}`;
     await supabase.from('fb_messages').upsert({
@@ -124,12 +128,11 @@ async function handleFeedChange(value, page) {
     }, { onConflict: 'fb_message_id', ignoreDuplicates: true });
   }
 
-  // D. Responder públicamente
-  await graphPost(`${commentId}/comments`, { message: mensajePublico }, page.access_token);
+  // D. Responder públicamente (usando el ID limpio)
+  await graphPost(`${cleanCommentId}/comments`, { message: mensajePublico }, page.access_token);
   
-  // E. Ocultar el comentario original (En lugar de borrarlo)
-  // Así el cliente ve su comentario y tu respuesta, pero el resto del mundo no.
-  await graphPost(commentId, { is_hidden: true }, page.access_token);
+  // E. Ocultar el comentario original (usando el ID limpio)
+  await graphPost(cleanCommentId, { is_hidden: true }, page.access_token);
   console.log(`[feed] ✅ Comentario de ${nombreCliente} atendido y ocultado.`);
 }
 
